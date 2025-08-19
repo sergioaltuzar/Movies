@@ -10,10 +10,12 @@ import Foundation
 class MoviesViewModel: ObservableObject {
     @Published var upcomingMovies: [DataMovie] = []
     @Published var nowPlayingMovies: [DataMovie] = []
+    @Published var trendingMovies: [DataMovie] = []
     
     init() {
         getListUpcomingMovies()
         getMoviesNowPlaying()
+        getTrendingMovies()
     }
     
     func getListUpcomingMovies() {
@@ -49,6 +51,32 @@ class MoviesViewModel: ObservableObject {
                 switch result {
                 case.success(let movies):
                     self.nowPlayingMovies = movies
+                    
+                case .failure(let error):
+                    switch error {
+                    case .invalidURL:
+                        print("Error invalidURL")
+                    case .unableToComplet:
+                        print("Error unableToComplet")
+                    case .invalidResponse:
+                        print("Error invalidResponse")
+                    case .invalidData:
+                        print("Error invalidData")
+                    case .decodingError:
+                        print("Error decodingError")
+                    }
+                }
+            }
+        }
+    }
+    
+    func getTrendingMovies() {
+        NetworkManager.shared.getTrendingMovies { [weak self] result in
+            guard let self else { return }
+            DispatchQueue.main.async {
+                switch result {
+                case.success(let movies):
+                    self.trendingMovies = movies
                     
                 case .failure(let error):
                     switch error {

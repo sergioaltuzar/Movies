@@ -25,7 +25,7 @@ class NetworkManager: NSObject {
     "https://api.themoviedb.org/3/movie/now_playing?api_key=b72deee0247dc9fd0a6e9c73fb5d2e6b&language=es-MX&page=1"
     
     static let trending =
-    "https://api.themoviedb.org/3/trending/all/day?api_key=2cfa8720256036601fb9ac4e4bce1a9b"
+    "https://api.themoviedb.org/3/trending/all/day?api_key=b72deee0247dc9fd0a6e9c73fb5d2e6b"
     
     func getLisOfUpcomingMovies(completed: @escaping (Result<[DataMovie], APError>) -> Void ) {
         guard let url = URL(string: NetworkManager.upcoming) else {
@@ -61,6 +61,38 @@ class NetworkManager: NSObject {
     
     func getMoviesNowPlaying(completed: @escaping (Result<[DataMovie], APError>) -> Void ) {
         guard let url = URL(string: NetworkManager.nowPlaying) else {
+            completed(.failure(.invalidURL))
+            return
+        }
+        let task = URLSession.shared.dataTask(with: url) { data, response, error in
+            if let _ = error {
+                completed(.failure(.unableToComplet))
+                return
+            }
+            
+            guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
+                completed(.failure(.invalidResponse))
+                return
+            }
+            
+            guard let data = data else {
+                completed(.failure(.invalidData))
+                return
+            }
+            do {
+                let decoder = JSONDecoder()
+                let decodedResponse = try decoder.decode(MovieDataModel.self, from: data)
+                completed(.success(decodedResponse.results))
+            } catch {
+                print("Debug: error \(error.localizedDescription)")
+                completed(.failure(.decodingError))
+            }
+        }
+        task.resume()
+    }
+    
+    func getTrendingMovies(completed: @escaping (Result<[DataMovie], APError>) -> Void ) {
+        guard let url = URL(string: NetworkManager.trending) else {
             completed(.failure(.invalidURL))
             return
         }
